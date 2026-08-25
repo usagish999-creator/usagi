@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backrooms Level 推理ゲーム</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Noto Sans JP", "Yu Gothic", sans-serif;
+    background: #151515;
+    color: #e8e8e8;
+    display: flex;
+    justify-content: center;
+    padding: 30px 15px;
+}
+
+.game-container {
+    width: 100%;
+    max-width: 850px;
+}
+
+h1 {
+    text-align: center;
+    letter-spacing: 5px;
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+}
+
+h2 {
+    font-size: 1.1rem;
+    margin-top: 0;
+}
+
+/* 上部情報 */
+
+.info-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.info-bar div {
+    flex: 1;
+    background: #222;
+    border: 1px solid #444;
+    padding: 15px;
+    text-align: center;
+}
+
+.info-bar span {
+    display: block;
+    margin-top: 5px;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+/* 質問履歴 */
+
+.history-section {
+    background: #202020;
+    border: 1px solid #3c3c3c;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 100px;
+}
+
+.history-item {
+    padding: 10px;
+    border-bottom: 1px solid #444;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.answer-yes,
+.answer-no {
+    font-weight: bold;
+}
+
+.empty-history {
+    color: #888;
+}
+
+/* 質問 */
+
+.question-section {
+    background: #202020;
+    border: 1px solid #3c3c3c;
+    padding: 20px;
+}
+
+.question-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.question-button {
+    min-height: 90px;
+    padding: 15px;
+    border: 1px solid #555;
+    background: #292929;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.question-button:hover {
+    background: #353535;
+    border-color: #888;
+}
+
+.question-button:active {
+    transform: scale(0.98);
+}
+
+/* 答えを決める */
+
+.answer-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.guess-button {
+    width: 100%;
+    padding: 18px;
+    border: 1px solid #777;
+    background: #303030;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.guess-button:hover {
+    background: #404040;
+}
+
+/* Level選択 */
+
+.guess-panel {
+    margin-top: 20px;
+    background: #202020;
+    border: 1px solid #555;
+    padding: 20px;
+}
+
+.level-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.level-button {
+    padding: 15px;
+    background: #292929;
+    color: white;
+    border: 1px solid #555;
+    cursor: pointer;
+}
+
+.level-button:hover {
+    background: #3a3a3a;
+}
+
+.cancel-button {
+    width: 100%;
+    margin-top: 15px;
+    padding: 12px;
+    background: #222;
+    color: #aaa;
+    border: 1px solid #444;
+    cursor: pointer;
+}
+
+/* 結果 */
+
+.result {
+    margin-top: 20px;
+    text-align: center;
+    background: #202020;
+    border: 1px solid #777;
+    padding: 30px;
+}
+
+.result h2 {
+    font-size: 2rem;
+}
+
+.result button {
+    margin-top: 15px;
+    padding: 15px 30px;
+    background: #303030;
+    color: white;
+    border: 1px solid #666;
+    cursor: pointer;
+}
+
+/* 非表示 */
+
+.hidden {
+    display: none;
+}
+
+/* スマホ */
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 15px 10px;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+        letter-spacing: 3px;
+    }
+
+    .question-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .level-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .info-bar {
+        gap: 8px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<main class="game-container">
+
+    <h1>BACKROOMS<br>LEVEL GUESSER</h1>
+
+    <div class="info-bar">
+        <div>
+            質問数
+            <span id="question-count">0</span>
+        </div>
+
+        <div>
+            残り候補
+            <span id="remaining-count">17</span>
+        </div>
+    </div>
+
+    <section class="history-section">
+        <h2>質問履歴</h2>
+
+        <div id="history">
+            <p class="empty-history">
+                まだ質問していません。
+            </p>
+        </div>
+    </section>
+
+    <section class="question-section">
+        <h2>質問を選んでください</h2>
+
+        <div
+            id="question-buttons"
+            class="question-buttons">
+        </div>
+    </section>
+
+    <section class="answer-section">
+        <button
+            id="guess-button"
+            class="guess-button">
+            答えを決める
+        </button>
+    </section>
+
+    <section
+        id="guess-panel"
+        class="guess-panel hidden">
+
+        <h2>答えを選んでください</h2>
+
+        <div
+            id="level-buttons"
+            class="level-buttons">
+        </div>
+
+        <button
+            id="cancel-button"
+            class="cancel-button">
+            戻る
+        </button>
+    </section>
+
+    <section
+        id="result"
+        class="result hidden">
+
+        <h2 id="result-title"></h2>
+
+        <p id="result-text"></p>
+
+        <button id="restart-button">
+            もう一度遊ぶ
+        </button>
+    </section>
+
+</main>
+
+<script>
+
+/* =============================
+   Levelデータ
+============================= */
+
+const levels = [
+    { id: 0, name: "Level 0「ロビー」" },
+    { id: 1, name: "Level 1「居住可能区域」" },
+    { id: 2, name: "Level 2「パイプドリーム」" },
+    { id: 3, name: "Level 3「変電所」" },
+    { id: 4, name: "Level 4「放棄されたオフィス」" },
+    { id: 5, name: "Level 5「恐怖のホテル」" },
+    { id: 6, name: "Level 6「消灯」" },
+    { id: 7, name: "Level 7「海洋恐怖症」" },
+    { id: 8, name: "Level 8「洞窟網」" },
+    { id: 9, name: "Level 9「郊外」" },
+    { id: 10, name: "Level 10「小麦畑」" },
+    { id: 11, name: "Level 11「終わりなき町」" },
+    { id: 37, name: "Level 37「崇高」" },
+    { id: "!", name: "Level !「命がけで走れ！」" },
+    { id: 94, name: "Level 94「モーション」" },
+    { id: 188, name: "Level 188「窓だらけの中庭」" },
+    { id: 974, name: "Level 974「キティちゃんの家」" }
+];
+
+
+/* =============================
+   通常質問
+============================= */
+
+const normalQuestions = [
+
+    {
+        id: "permanent-living",
+        text: "人間が長期間定住できる環境ですか？",
+        yes: [1, 4, 11, 37, 974]
+    },
+
+    {
+        id: "sky",
+        text: "その空間には空が見えますか？",
+        yes: [7, 9, 10, 11, 94, 188]
+    },
+
+    {
+        id: "buildings",
+        text: "そこには建物がありますか？",
+        yes: [7, 9, 10, 11, 94, 188]
+    },
+
+    {
+        id: "environment-danger",
+        text: "エンティティ以外の環境そのものによる危険が大きいですか？",
+        yes: [0, 2, 3, 6, 7]
+    },
+
+    {
+        id: "entity-danger",
+        text: "そのレベルの主な危険は、エンティティによるものですか？",
+        yes: [5, 8, 9, "!", 94, 188]
+    },
+
+    {
+        id: "non-sun-light",
+        text: "そのレベルに、太陽以外の光源はありますか？",
+        yes: [
+            0, 1, 2, 3, 4, 5,
+            9, 11, 37, "!", 188, 974
+        ]
+    },
+
+    {
+        id: "stairs",
+        text: "そのレベルには階段がありますか？",
+        yes: [4, 5, 6, 9, 11, 37, 188, 974]
+    },
+
+    {
+        id: "windows",
+        text: "そのレベルには窓がありますか？",
+        yes: [4, 5, 7, 9, 11, 94, 188, 974]
+    },
+
+    {
+        id: "danger-by-location",
+        text: "そのレベルでは、場所によって危険度が大きく変わりますか？",
+        yes: [7, 9, 94]
+    },
+
+    {
+        id: "community",
+        text: "そのレベルには、人間によるコミュニティが形成されていますか？",
+        yes: [1, 2, 3, 4, 5, 8, 10, 11, 37]
+    },
+
+    {
+        id: "unique-entity",
+        text: "そのレベルに固有のエンティティは存在しますか？",
+        yes: [5, 8, 974]
+    }
+
+];
+
+
+/* =============================
+   Level専用質問
+============================= */
+
+const specialQuestions = [
+
+    {
+        id: "level0-movie",
+        text: "2026年のBackrooms映画に登場した空間のモデルになりましたか？",
+        yes: [0]
+    },
+
+    {
+        id: "level1-parking",
+        text: "主な空間は駐車場のような構造ですか？",
+        yes: [1]
+    },
+
+    {
+        id: "level2-narrow",
+        text: "狭い通路が主な環境ですか？",
+        yes: [2]
+    },
+
+    {
+        id: "level3-electric",
+        text: "感電が主な危険の一つですか？",
+        yes: [3]
+    },
+
+    {
+        id: "level4-water-server",
+        text: "アーモンドウォーターが入ったウォーターサーバーが確認されていますか？",
+        yes: [4]
+    },
+
+    {
+        id: "level5-boiler",
+        text: "ボイラー室がありますか？",
+        yes: [5]
+    },
+
+    {
+        id: "level6-light",
+        text: "その空間は光を吸収しますか？",
+        yes: [6]
+    },
+
+    {
+        id: "level7-water",
+        text: "そのレベルに侵入すると、足元が水浸しですか？",
+        yes: [7]
+    },
+
+    {
+        id: "level8-cave",
+        text: "空間そのものが巨大な洞窟網ですか？",
+        yes: [8]
+    },
+
+    {
+        id: "level9-midnight",
+        text: "空を観測した結果、常に真夜中であることが確認されていますか？",
+        yes: [9]
+    },
+
+    {
+        id: "level10-fog",
+        text: "そこでは常に霧がかかっていますか？",
+        yes: [10]
+    },
+
+    {
+        id: "level11-effect",
+        text: "そのレベルには、レベルから名前がとられた現象が確認されていますか？",
+        yes: [11]
+    },
+
+    {
+        id: "level37-water",
+        text: "青水色の淡水が特徴的ですか？",
+        yes: [37]
+    },
+
+    {
+        id: "level-exclamation-action",
+        text: "そこでするべきことは限られていますか？",
+        yes: ["!"]
+    },
+
+    {
+        id: "level94-time-danger",
+        text: "その場所では、時間によって危険度が大きく変わりますか？",
+        yes: [94]
+    },
+
+    {
+        id: "level188-start",
+        text: "そこは建物に囲まれている場所から始まりますか？",
+        yes: [188]
+    },
+
+    {
+        id: "level974-entry-exit",
+        text: "そのレベルへ入る条件は、出る条件と深く結びついていますか？",
+        yes: [974]
+    }
+
+];
+
+
+/* =============================
+   ゲーム状態
+============================= */
+
+let targetLevel;
+let questionCount;
+let usedQuestionIds;
+let currentQuestions;
+let remainingLevels;
+let history;
+
+
+/* =============================
+   HTML要素
+============================= */
+
+const questionCountElement =
+    document.getElementById("question-count");
+
+const remainingCountElement =
+    document.getElementById("remaining-count");
+
+const questionButtonsElement =
+    document.getElementById("question-buttons");
+
+const historyElement =
+    document.getElementById("history");
+
+const guessButton =
+    document.getElementById("guess-button");
+
+const guessPanel =
+    document.getElementById("guess-panel");
+
+const levelButtonsElement =
+    document.getElementById("level-buttons");
+
+const cancelButton =
+    document.getElementById("cancel-button");
+
+const resultElement =
+    document.getElementById("result");
+
+const resultTitle =
+    document.getElementById("result-title");
+
+const resultText =
+    document.getElementById("result-text");
+
+const restartButton =
+    document.getElementById("restart-button");
+
+
+/* =============================
+   配列をランダムに並べ替える
+============================= */
+
+function shuffle(array) {
+
+    const copied = [...array];
+
+    for (let i = copied.length - 1; i > 0; i--) {
+
+        const j =
+            Math.floor(Math.random() * (i + 1));
+
+        [copied[i], copied[j]] =
+            [copied[j], copied[i]];
+    }
+
+    return copied;
+}
+
+
+/* =============================
+   質問プール
+============================= */
+
+function getQuestionPool() {
+
+    if (questionCount < 2) {
+        return normalQuestions;
+    }
+
+    return [
+        ...normalQuestions,
+        ...specialQuestions
+    ];
+}
+
+
+/* =============================
+   候補を絞れる質問か
+============================= */
+
+function canReduceCandidates(question) {
+
+    let yesCount = 0;
+    let noCount = 0;
+
+    remainingLevels.forEach(levelId => {
+
+        if (question.yes.includes(levelId)) {
+            yesCount++;
+        } else {
+            noCount++;
+        }
+
+    });
+
+    return yesCount > 0 && noCount > 0;
+}
+
+
+/* =============================
+   使用可能な質問
+============================= */
+
+function getAvailableQuestions() {
+
+    return getQuestionPool().filter(question => {
+
+        const notUsed =
+            !usedQuestionIds.includes(question.id);
+
+        const notDisplayed =
+            !currentQuestions.some(
+                current => current.id === question.id
+            );
+
+        return notUsed && notDisplayed;
+    });
+}
+
+
+/* =============================
+   有効な質問があるか
+============================= */
+
+function hasUsefulQuestion() {
+
+    return currentQuestions.some(question =>
+        canReduceCandidates(question)
+    );
+}
+
+
+/* =============================
+   4択に有効な質問を保証
+============================= */
+
+function ensureUsefulQuestion() {
+
+    if (hasUsefulQuestion()) {
+        return;
+    }
+
+    const usefulQuestions =
+        getAvailableQuestions().filter(question =>
+            canReduceCandidates(question)
+        );
+
+    if (usefulQuestions.length === 0) {
+        return;
+    }
+
+    const usefulQuestion =
+        shuffle(usefulQuestions)[0];
+
+    if (currentQuestions.length >= 4) {
+
+        currentQuestions[3] =
+            usefulQuestion;
+
+    } else {
+
+        currentQuestions.push(usefulQuestion);
+    }
+}
+
+
+/* =============================
+   最初の4問
+============================= */
+
+function createFirstQuestions() {
+
+    const availableQuestions =
+        getAvailableQuestions();
+
+    currentQuestions =
+        shuffle(availableQuestions).slice(0, 4);
+
+    ensureUsefulQuestion();
+}
+
+
+/* =============================
+   新しい質問を補充
+============================= */
+
+function addNewQuestion() {
+
+    const availableQuestions =
+        getAvailableQuestions();
+
+    if (availableQuestions.length === 0) {
+        return;
+    }
+
+    const randomQuestion =
+        shuffle(availableQuestions)[0];
+
+    currentQuestions.push(randomQuestion);
+}
+
+
+/* =============================
+   質問表示
+============================= */
+
+function renderQuestions() {
+
+    questionButtonsElement.innerHTML = "";
+
+    currentQuestions.forEach(question => {
+
+        const button =
+            document.createElement("button");
+
+        button.className =
+            "question-button";
+
+        button.textContent =
+            question.text;
+
+        button.addEventListener(
+            "click",
+            () => askQuestion(question)
+        );
+
+        questionButtonsElement.appendChild(button);
+    });
+}
+
+
+/* =============================
+   質問実行
+============================= */
+
+function askQuestion(question) {
+
+    const answer =
+        question.yes.includes(targetLevel);
+
+    questionCount++;
+
+    usedQuestionIds.push(question.id);
+
+    history.push({
+        text: question.text,
+        answer: answer
+    });
+
+
+    remainingLevels =
+        remainingLevels.filter(levelId => {
+
+            const levelAnswer =
+                question.yes.includes(levelId);
+
+            return levelAnswer === answer;
+        });
+
+
+    currentQuestions =
+        currentQuestions.filter(
+            current => current.id !== question.id
+        );
+
+
+    addNewQuestion();
+
+    ensureUsefulQuestion();
+
+    updateGameDisplay();
+}
+
+
+/* =============================
+   履歴表示
+============================= */
+
+function renderHistory() {
+
+    historyElement.innerHTML = "";
+
+    if (history.length === 0) {
+
+        historyElement.innerHTML =
+            `<p class="empty-history">
+                まだ質問していません。
+            </p>`;
+
+        return;
+    }
+
+
+    history.forEach((item, index) => {
+
+        const historyItem =
+            document.createElement("div");
+
+        historyItem.className =
+            "history-item";
+
+        const answerText =
+            item.answer ? "はい" : "いいえ";
+
+        historyItem.innerHTML = `
+            <strong>質問 ${index + 1}</strong>
+            ：${item.text}
+            <br>
+            回答：
+            <span class="${
+                item.answer
+                    ? "answer-yes"
+                    : "answer-no"
+            }">
+                ${answerText}
+            </span>
+        `;
+
+        historyElement.appendChild(historyItem);
+    });
+}
+
+
+/* =============================
+   画面更新
+============================= */
+
+function updateGameDisplay() {
+
+    questionCountElement.textContent =
+        questionCount;
+
+    remainingCountElement.textContent =
+        remainingLevels.length;
+
+    renderQuestions();
+
+    renderHistory();
+}
+
+
+/* =============================
+   答え選択画面を開く
+============================= */
+
+guessButton.addEventListener("click", () => {
+
+    guessPanel.classList.remove("hidden");
+
+    renderLevelButtons();
+});
+
+
+/* =============================
+   答え選択画面を閉じる
+============================= */
+
+cancelButton.addEventListener("click", () => {
+
+    guessPanel.classList.add("hidden");
+});
+
+
+/* =============================
+   Level選択ボタン
+
+   ★ 全Levelを表示
+============================= */
+
+function renderLevelButtons() {
+
+    levelButtonsElement.innerHTML = "";
+
+
+    levels.forEach(level => {
+
+        const button =
+            document.createElement("button");
+
+        button.className =
+            "level-button";
+
+        button.textContent =
+            level.name;
+
+        button.addEventListener(
+            "click",
+            () => makeGuess(level.id)
+        );
+
+        levelButtonsElement.appendChild(button);
+    });
+}
+
+
+/* =============================
+   回答判定
+============================= */
+
+function makeGuess(guessedLevel) {
+
+    guessPanel.classList.add("hidden");
+
+    resultElement.classList.remove("hidden");
+
+
+    const correctLevel =
+        levels.find(
+            level => level.id === targetLevel
+        );
+
+
+    if (guessedLevel === targetLevel) {
+
+        resultTitle.textContent = "正解！";
+
+        resultText.textContent =
+            `${correctLevel.name} を ${questionCount} 問で当てました！`;
+
+    } else {
+
+        resultTitle.textContent = "不正解";
+
+        resultText.textContent =
+            `正解は ${correctLevel.name} でした。`;
+    }
+
+
+    questionButtonsElement.innerHTML = "";
+
+    guessButton.style.display = "none";
+}
+
+
+/* =============================
+   リスタート
+============================= */
+
+restartButton.addEventListener(
+    "click",
+    () => startGame()
+);
+
+
+/* =============================
+   ゲーム開始
+============================= */
+
+function startGame() {
+
+    const randomIndex =
+        Math.floor(
+            Math.random() * levels.length
+        );
+
+    targetLevel =
+        levels[randomIndex].id;
+
+    questionCount = 0;
+
+    usedQuestionIds = [];
+
+    currentQuestions = [];
+
+    remainingLevels =
+        levels.map(level => level.id);
+
+    history = [];
+
+
+    createFirstQuestions();
+
+
+    resultElement.classList.add("hidden");
+
+    guessButton.style.display = "block";
+
+    guessPanel.classList.add("hidden");
+
+
+    updateGameDisplay();
+
+
+    console.log(
+        "今回の正解:",
+        targetLevel
+    );
+}
+
+
+/* =============================
+   最初にゲーム開始
+============================= */
+
+startGame();
+
+</script>
+
+</body>
+</html>
